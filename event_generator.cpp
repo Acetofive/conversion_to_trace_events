@@ -68,7 +68,7 @@ int process_function2(struct tool_options *options, struct values_to_trace *val,
 
 					// print caller function
 					if(options->print_caller == 1){
-						printf(" Caller function in hex: %s.\n", val->curr_location);
+						printf(" Traced function called on instruction nr %lu. \n Caller function (in hex): %s.\n", *curr_instr, val->curr_location);
 					}
 				}
 			}
@@ -86,6 +86,7 @@ int process_function2(struct tool_options *options, struct values_to_trace *val,
 			if(!stack_loc->empty()){
 				strcpy(val->curr_location, (stack_loc->top()).c_str());
 			}
+			else{reset_curr_location(val->curr_location);}
 		}
 	}
 	else{
