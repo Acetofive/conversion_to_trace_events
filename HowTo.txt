@@ -1,0 +1,37 @@
+This text files goes through the whole process of using this tool. It starts by compiling the program to be traced
+and ends with the use of the tool.
+
+1) Compile (C++) program: g++ -ggdb main.cpp
+
+2) Record generated executable sing perf with the following options: perf record -e intel_pt//u [--per-thread] ./a.out
+	--> --per-thread is optional. If left out, the whole workload of the program´s execution is traced, which is 
+		what is usually intended
+This step generated a trace file perf.data
+
+2.1) If restriction error appears when recording, use following command and then go to 2) again: 
+	- sudo sh -c " echo 0 > /proc/sys/kernel/kptr_restrict"
+
+3) Next, we´ll take relevant information from the perf.data file in order to prepare it for decoding.
+   For that, first call the following script found in the Intel PT decoder library:
+	- .../processor_trace/script/perf-read-aux.bash
+	--> This script generates a binary file which will be used in the next step. Here it is referred as file.bin,
+		but usually it´s generated with the name perf.data-aux-idx0.bin
+
+4) Call second script, which is directly followed by ptxed call (sample decoder offered by Intel PT decoder library).
+   We direct the output towards a .txt file, with an arbitrary name (here: assembly.txt).
+
+		- .../processor_trace/script/perf-read-image.bash | xargs ptxed --pt <file.bin> > assembly.txt
+	--> This decodes the binary file and generates a text file with the executed instructions (in assembly code).
+
+5) Call ./tool --extr-code [<assembly file>] to extract relevant assembly code to ´rel_code.txt´ (predefined name)
+   Note: this feature of the tool problably only works when tracing small executables since it doesn´t take long calls
+ 	into consideration.
+
+6) Call ./tool with desired options
+
+Final note: as it is, the tool works with the whole decoded text file. However, it doesn´t take advantage of this fact
+		and only uses the knowledge of the current instruction like it would be done if the generation of events
+		were done during the original decoding.
+		Furthermore, it works with the same type variable that ptxed uses to print the instruction. Therefore,
+		ptxed could be easily modified to encorporate this tool, by using the point where ptxed prints the decoded
+		instruction as input for this tool.
